@@ -1,1 +1,1 @@
-# helene
+# HELENE - High Dimensional Vector Indexing Models
