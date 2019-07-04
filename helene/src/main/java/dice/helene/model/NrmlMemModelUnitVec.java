@@ -9,27 +9,27 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model. (Only works with Normalized Model)
  * 
- * This class selects {@link W2VNrmlMemModelUnitVec#compareVecCount} vectors
+ * This class selects {@link NrmlMemModelUnitVec#compareVecCount} vectors
  * (centroids of the KMeans result on the model vectors) and then calculates the
  * cosine similarity of all words in model to those vectors.
  * 
  * It uses the knowledge about pre-processed similarities with
- * {@link W2VNrmlMemModelUnitVec#comparisonVecs} to narrow down the search of
+ * {@link NrmlMemModelUnitVec#comparisonVecs} to narrow down the search of
  * closest word for the user specified vector.
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelUnitVec extends W2VNrmlMemModelBinSrch {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelUnitVec extends NrmlMemModelBinSrch {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 	
 	protected double bucketSize;
 	protected String currentImpl;
-	public W2VNrmlMemModelUnitVec(final Map<String, float[]> word2vec, final int vectorSize, int bucketCount) throws IOException {
-		super(word2vec, vectorSize, vectorSize, bucketCount);
+	public NrmlMemModelUnitVec(final Map<String, float[]> embdngMap, final int vectorSize, int bucketCount) throws IOException {
+		super(embdngMap, vectorSize, vectorSize, bucketCount);
 		bucketSize = (2d)/(Double.valueOf(bucketCount));
 		currentImpl = "Unit Vector";
 	}
@@ -74,13 +74,13 @@ public class W2VNrmlMemModelUnitVec extends W2VNrmlMemModelBinSrch {
 				LOG.info("Ring Radius: " + ringRad);
 				// calculate cosine similarity of all distances
 				float[] curCompVec;
-				midBs = new BitSet(word2vec.size());
+				midBs = new BitSet(embdngMap.size());
 				BitSet finBitSet = null;
 				for (int i = 0; i < compareVecCount; i++) {
 					curCompVec = comparisonVecs[i];
 					double cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(curCompVec, vector);
 					int indx = getBucketIndex(cosSimVal);
-					BitSet curBs = new BitSet(word2vec.size());
+					BitSet curBs = new BitSet(embdngMap.size());
 					// calculate middle bitset
 					if(csBucketContainer[i][indx]!=null) {
 						curBs.or(csBucketContainer[i][indx]);

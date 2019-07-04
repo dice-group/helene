@@ -1,53 +1,38 @@
 package dice.helene.model;
 
+import java.io.IOException;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.aksw.word2vecrestful.subset.DataSubsetProvider;
 import org.aksw.word2vecrestful.utils.Word2VecMath;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import net.sf.javaml.core.kdtree.KDTree;
-import net.sf.javaml.core.kdtree.KeySizeException;
-
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelBruteForce implements GenVecIndxModel {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 
-	private Map<String, float[]> word2vec;
+	private Map<String, float[]> embdngMap;
 	private int vectorSize;
 	// for future use
 	@SuppressWarnings("unused")
 	private DataSubsetProvider dataSubsetProvider;
-	
-	private KDTree kdTree;
 
-	public W2VNrmlMemModelKdTree(final Map<String, float[]> word2vec, final int vectorSize) {
-		this.word2vec = word2vec;
+	public NrmlMemModelBruteForce(final Map<String, float[]> embdngMap, final int vectorSize) {
+		this.embdngMap = embdngMap;
 		this.vectorSize = vectorSize;
 
 	}
 
 	@Override
-	public void process() {
+	public void process() throws IOException {
 		this.dataSubsetProvider = new DataSubsetProvider();
-		//TODO : Generate the KDTree here
-		kdTree = new KDTree(vectorSize);
-		try {
-			for(Entry<String, float[]> entry : word2vec.entrySet()) {
-				kdTree.insert(entry.getValue(), entry.getKey());
-			}
-		} catch(Exception ex) {
-			ex.printStackTrace();
-			LOG.error(ex);
-		}
 	}
 
 	/**
@@ -92,14 +77,7 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 	private String getClosestEntry(float[] vector, String subKey) {
 		// Normalize incoming vector
 		vector = Word2VecMath.normalize(vector);
-		String result = null;
-		try {
-			result = (String) kdTree.nearest(vector);
-		} catch (KeySizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return result;
+		return Word2VecMath.findClosestNormalizedVec(embdngMap, vector);
 	}
 
 	/**
@@ -113,12 +91,12 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 	}
 
 	/**
-	 * Method to fetch word2vec map
+	 * Method to fetch Embeddings map
 	 * 
-	 * @return - word2vec map
+	 * @return - embdngMap map
 	 */
-	public Map<String, float[]> getWord2VecMap() {
-		return this.word2vec;
+	public Map<String, float[]> getEmbdngMap() {
+		return this.embdngMap;
 	}
 
 }
