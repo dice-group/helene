@@ -12,16 +12,16 @@ import net.sf.javaml.core.kdtree.KDTree;
 import net.sf.javaml.core.kdtree.KeySizeException;
 
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelKdTree implements GenVecIndxModel {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 
-	private Map<String, float[]> word2vec;
+	private Map<String, float[]> embdngMap;
 	private int vectorSize;
 	// for future use
 	@SuppressWarnings("unused")
@@ -29,8 +29,8 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 	
 	private KDTree kdTree;
 
-	public W2VNrmlMemModelKdTree(final Map<String, float[]> word2vec, final int vectorSize) {
-		this.word2vec = word2vec;
+	public NrmlMemModelKdTree(final Map<String, float[]> embdngMap, final int vectorSize) {
+		this.embdngMap = embdngMap;
 		this.vectorSize = vectorSize;
 
 	}
@@ -41,7 +41,7 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 		//TODO : Generate the KDTree here
 		kdTree = new KDTree(vectorSize);
 		try {
-			for(Entry<String, float[]> entry : word2vec.entrySet()) {
+			for(Entry<String, float[]> entry : embdngMap.entrySet()) {
 				kdTree.insert(entry.getValue(), entry.getKey());
 			}
 		} catch(Exception ex) {
@@ -56,40 +56,11 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 	 * 
 	 * @param vector
 	 *            - vector to find closest word to
-	 * 
+	 * @param subKey
+	 *            - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	@Override
 	public String getClosestEntry(float[] vector) {
-		return getClosestEntry(vector, null);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector
-	 *            - vector to find closest word to
-	 * @param subKey
-	 *            - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	@Override
-	public String getClosestSubEntry(float[] vector, String subKey) {
-		return getClosestEntry(vector, subKey);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector
-	 *            - vector to find closest word to
-	 * @param subKey
-	 *            - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	private String getClosestEntry(float[] vector, String subKey) {
 		// Normalize incoming vector
 		vector = Word2VecMath.normalize(vector);
 		String result = null;
@@ -113,12 +84,12 @@ public class W2VNrmlMemModelKdTree implements GenWord2VecModel {
 	}
 
 	/**
-	 * Method to fetch word2vec map
+	 * Method to fetch Embeddings map
 	 * 
-	 * @return - word2vec map
+	 * @return - embdngMap map
 	 */
-	public Map<String, float[]> getWord2VecMap() {
-		return this.word2vec;
+	public Map<String, float[]> getEmbdngMap() {
+		return this.embdngMap;
 	}
 
 }

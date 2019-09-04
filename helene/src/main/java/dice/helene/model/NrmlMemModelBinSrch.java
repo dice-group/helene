@@ -11,24 +11,24 @@ import org.dice_research.topicmodeling.commons.sort.AssociativeSort;
 
 
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model. (Only works with Normalized Model)
  * 
- * This class selects {@link W2VNrmlMemModelBinSrch#compareVecCount} vectors (1
+ * This class selects {@link NrmlMemModelBinSrch#compareVecCount} vectors (1
  * mean vector and others on basis Map iterator) and then calculates the cosine
  * similarity of all words in model to those vectors.
  * 
  * It uses the knowledge about pre-processed similarities with
- * {@link W2VNrmlMemModelBinSrch#comparisonVecs} to narrow down the search of
+ * {@link NrmlMemModelBinSrch#comparisonVecs} to narrow down the search of
  * closest word for the user specified vector.
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelBinSrch implements GenVecIndxModel {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 
-	protected Map<String, float[]> word2vec;
+	protected Map<String, float[]> embdngMap;
 	protected int vectorSize;
 	protected float[][] comparisonVecs = null;
 	protected String[] wordArr;
@@ -39,21 +39,21 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 	protected int bucketCount = 10;
 	protected BitSet[][] csBucketContainer;
 
-	protected W2VNrmlMemModelBinSrch() {
+	protected NrmlMemModelBinSrch() {
 	}
 
-	public W2VNrmlMemModelBinSrch(final Map<String, float[]> word2vec, final int vectorSize) throws IOException {
-		this.word2vec = word2vec;
+	public NrmlMemModelBinSrch(final Map<String, float[]> embdngMap, final int vectorSize) throws IOException {
+		this.embdngMap = embdngMap;
 		this.vectorSize = vectorSize;
 		initVars();
 		// process();
 	}
 
-	public W2VNrmlMemModelBinSrch(final Map<String, float[]> word2vec, final int vectorSize, int compareVecCount,
+	public NrmlMemModelBinSrch(final Map<String, float[]> embdngMap, final int vectorSize, int compareVecCount,
 			int bucketCount) throws IOException {
 		this.bucketCount = bucketCount;
 		this.compareVecCount = compareVecCount;
-		this.word2vec = word2vec;
+		this.embdngMap = embdngMap;
 		this.vectorSize = vectorSize;
 		initVars();
 		// process();
@@ -67,7 +67,7 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 	public void process() throws IOException {
 		LOG.info("Process from BinSrch called");
 		// Setting mean as comparison vec
-		setMeanComparisonVec(word2vec, vectorSize);
+		setMeanComparisonVec(embdngMap, vectorSize);
 		// Initialize Arrays
 		processCosineSim();
 		// Set other comparison vecs
@@ -78,8 +78,8 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 		BitSet[] comparisonVecBuckets = csBucketContainer[compVecIndex];
 		double cosSimVal;
 		int i = 0;
-		for (String word : word2vec.keySet()) {
-			cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(comparisonVec, word2vec.get(word));
+		for (String word : embdngMap.keySet()) {
+			cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(comparisonVec, embdngMap.get(word));
 			// Setting bitset for the comparison vec
 			setValToBucket(i, cosSimVal, comparisonVecBuckets);
 			i++;
@@ -87,7 +87,7 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 	}
 
 	private void setAllComparisonVecs() {
-		int diff = (word2vec.size() / compareVecCount) - 1;
+		int diff = (embdngMap.size() / compareVecCount) - 1;
 		int curIndx = diff;
 		for (int i = 1; i < compareVecCount; i++) {
 			comparisonVecs[i] = vecArr[indxArr[curIndx]];
@@ -111,15 +111,15 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 //	}
 
 	private void processCosineSim() {
-		this.wordArr = new String[word2vec.size()];
-		this.vecArr = new float[word2vec.size()][vectorSize];
-		this.indxArr = new int[word2vec.size()];
-		this.simValArr = new double[word2vec.size()];
+		this.wordArr = new String[embdngMap.size()];
+		this.vecArr = new float[embdngMap.size()][vectorSize];
+		this.indxArr = new int[embdngMap.size()];
+		this.simValArr = new double[embdngMap.size()];
 		int i = 0;
 		BitSet[] meanComparisonVecBuckets = csBucketContainer[0];
-		for (String word : word2vec.keySet()) {
+		for (String word : embdngMap.keySet()) {
 			wordArr[i] = word;
-			float[] vec = word2vec.get(word);
+			float[] vec = embdngMap.get(word);
 			vecArr[i] = vec;
 			indxArr[i] = i;
 			simValArr[i] = Word2VecMath.cosineSimilarityNormalizedVecs(comparisonVecs[0], vec);
@@ -134,21 +134,21 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 		int bucketIndex = getBucketIndex(cosSimVal);
 		BitSet bitset = meanComparisonVecBuckets[bucketIndex];
 		if (bitset == null) {
-			bitset = new BitSet(word2vec.size());
+			bitset = new BitSet(embdngMap.size());
 			meanComparisonVecBuckets[bucketIndex] = bitset;
 		}
 		bitset.set(wordIndex);
 	}
 
-	private void setMeanComparisonVec(Map<String, float[]> word2vecMap, int vectorSize) {
+	private void setMeanComparisonVec(Map<String, float[]> embdngMap, int vectorSize) {
 		float[] meanArr = new float[vectorSize];
-		int totSize = word2vecMap.size();
+		int totSize = embdngMap.size();
 		// loop all dimensions
 		for (int i = 0; i < vectorSize; i++) {
 			// loop through all the words
 			float[] dimsnArr = new float[totSize];
 			float sum = 0;
-			for (float[] vecEntry : word2vecMap.values()) {
+			for (float[] vecEntry : embdngMap.values()) {
 				float val = vecEntry[i];
 				sum += val;
 			}
@@ -159,41 +159,16 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 		this.comparisonVecs[0] = meanArr;
 	}
 
+
 	/**
 	 * Method to fetch the closest word entry for a given vector using cosine
 	 * similarity
 	 * 
 	 * @param vector - vector to find closest word to
-	 * 
+	 * @param subKey - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	@Override
 	public String getClosestEntry(float[] vector) {
-		return getClosestEntry(vector, null);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector - vector to find closest word to
-	 * @param subKey - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	@Override
-	public String getClosestSubEntry(float[] vector, String subKey) {
-		return getClosestEntry(vector, subKey);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector - vector to find closest word to
-	 * @param subKey - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	protected String getClosestEntry(float[] vector, String subKey) {
 		String closestWord = null;
 		try {
 			// Normalize incoming vector
@@ -205,7 +180,7 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 				curCompVec = comparisonVecs[i];
 				double cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(curCompVec, vector);
 				int indx = getBucketIndex(cosSimVal);
-				BitSet curBs = new BitSet(word2vec.size());
+				BitSet curBs = new BitSet(embdngMap.size());
 				if (csBucketContainer[i][indx] != null) {
 					curBs.or(csBucketContainer[i][indx]);
 				}
@@ -313,12 +288,12 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 
 	protected void genAllCosineSim() {
 		double cosSimVal;
-		this.wordArr = new String[word2vec.size()];
-		this.vecArr = new float[word2vec.size()][vectorSize];
+		this.wordArr = new String[embdngMap.size()];
+		this.vecArr = new float[embdngMap.size()][vectorSize];
 		int i = 0;
-		for (String word : word2vec.keySet()) {
+		for (String word : embdngMap.keySet()) {
 			wordArr[i] = word;
-			float[] vec = word2vec.get(word);
+			float[] vec = embdngMap.get(word);
 			vecArr[i] = vec;
 			for (int j = 0; j < compareVecCount; j++) {
 				BitSet[] comparisonVecBuckets = csBucketContainer[j];
@@ -341,12 +316,12 @@ public class W2VNrmlMemModelBinSrch implements GenWord2VecModel {
 	}
 
 	/**
-	 * Method to fetch word2vec map
+	 * Method to fetch Embeddings map
 	 * 
-	 * @return - word2vec map
+	 * @return - embdngMap map
 	 */
-	public Map<String, float[]> getWord2VecMap() {
-		return this.word2vec;
+	public Map<String, float[]> getEmbdngMap() {
+		return this.embdngMap;
 	}
 
 	public int getCompareVecCount() {

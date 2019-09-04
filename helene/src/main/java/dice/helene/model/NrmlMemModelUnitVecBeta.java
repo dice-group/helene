@@ -13,25 +13,25 @@ import dice.helene.util.MathUtil;
 
 
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model. (Only works with Normalized Model)
  * 
- * This class selects {@link W2VNrmlMemModelUnitVecBeta#compareVecCount} vectors
+ * This class selects {@link NrmlMemModelUnitVecBeta#compareVecCount} vectors
  * (centroids of the KMeans result on the model vectors) and then calculates the
  * cosine similarity of all words in model to those vectors.
  * 
  * It uses the knowledge about pre-processed similarities with
- * {@link W2VNrmlMemModelUnitVecBeta#comparisonVecs} to narrow down the search of
+ * {@link NrmlMemModelUnitVecBeta#comparisonVecs} to narrow down the search of
  * closest word for the user specified vector.
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelUnitVecBeta extends W2VNrmlMemModelUnitVec {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelUnitVecBeta extends NrmlMemModelUnitVec {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 
-	public W2VNrmlMemModelUnitVecBeta(final Map<String, float[]> word2vec, final int vectorSize, int bucketCount) throws IOException {
-		super(word2vec, vectorSize, bucketCount);
+	public NrmlMemModelUnitVecBeta(final Map<String, float[]> embdngMap, final int vectorSize, int bucketCount) throws IOException {
+		super(embdngMap, vectorSize, bucketCount);
 		currentImpl+= " Beta";
 	}
 	
@@ -49,14 +49,6 @@ public class W2VNrmlMemModelUnitVecBeta extends W2VNrmlMemModelUnitVec {
 		double c = (lSq-1d)*alpha*alpha;
 		
 		double[] betaArr = MathUtil.quadraticEquationRoots(a, b, c);
-		//TODO: Choosing beta can be improved
-		/*double beta = betaArr[0];
-		double delta1 = calcDelta(beta, minVal);
-		beta = betaArr[1];
-		double delta2 = calcDelta(beta, minVal);
-		
-		double delta = Math.abs(delta1>delta2?betaArr[0]:betaArr[1]);*/
-		
 
 		gamma = (int) Math.ceil(Math.max(Math.abs(betaArr[0]), Math.abs(betaArr[1]))/bucketSize);
 		return gamma<1?1:gamma;
@@ -73,7 +65,7 @@ public class W2VNrmlMemModelUnitVecBeta extends W2VNrmlMemModelUnitVec {
 	 * @param subKey - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	protected String getClosestEntry(float[] vector, String subKey) {
+	public String getClosestEntry(float[] vector) {
 		String closestWord = null;
 		try {
 			// Normalize incoming vector
@@ -91,13 +83,13 @@ public class W2VNrmlMemModelUnitVecBeta extends W2VNrmlMemModelUnitVec {
 				//LOG.info("Ring Radius: " + ringRad);
 				// calculate cosine similarity of all distances
 				float[] curCompVec;
-				midBs = new BitSet(word2vec.size());
+				midBs = new BitSet(embdngMap.size());
 				BitSet finBitSet = null;
 				for (int i = 0; i < compareVecCount; i++) {
 					curCompVec = comparisonVecs[i];
 					double cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(curCompVec, vector);
 					int indx = getBucketIndex(cosSimVal);
-					BitSet curBs = new BitSet(word2vec.size());
+					BitSet curBs = new BitSet(embdngMap.size());
 					// calculate middle bitset
 					if(csBucketContainer[i][indx]!=null) {
 						curBs.or(csBucketContainer[i][indx]);

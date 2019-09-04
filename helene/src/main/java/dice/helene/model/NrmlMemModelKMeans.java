@@ -21,28 +21,28 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model. (Only works with Normalized Model)
  * 
- * This class selects {@link W2VNrmlMemModelKMeans#compareVecCount} vectors
+ * This class selects {@link NrmlMemModelKMeans#compareVecCount} vectors
  * (centroids of the KMeans result on the model vectors) and then calculates the
  * cosine similarity of all words in model to those vectors.
  * 
  * It uses the knowledge about pre-processed similarities with
- * {@link W2VNrmlMemModelKMeans#comparisonVecs} to narrow down the search of
+ * {@link NrmlMemModelKMeans#comparisonVecs} to narrow down the search of
  * closest word for the user specified vector.
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelKMeans extends W2VNrmlMemModelBinSrch {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelKMeans extends NrmlMemModelBinSrch {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 
 	private int kMeansMaxItr = 5;
-	private String vecFilePath = Cfg.get(W2VNrmlMemModelKMeans.class.getName().concat(".filepath"));
+	private String vecFilePath = Cfg.get(NrmlMemModelKMeans.class.getName().concat(".filepath"));
 
-	public W2VNrmlMemModelKMeans(final Map<String, float[]> word2vec, final int vectorSize) throws IOException {
-		super(word2vec, vectorSize);
+	public NrmlMemModelKMeans(final Map<String, float[]> embdngMap, final int vectorSize) throws IOException {
+		super(embdngMap, vectorSize);
 	}
 
 	@Override
@@ -74,7 +74,7 @@ public class W2VNrmlMemModelKMeans extends W2VNrmlMemModelBinSrch {
 		KMeansPlusPlusClusterer<ClusterableVec> clusterer = new KMeansPlusPlusClusterer<>(compareVecCount,
 				kMeansMaxItr);
 		List<ClusterableVec> vecList = new ArrayList<>();
-		for (float[] vec : word2vec.values()) {
+		for (float[] vec : embdngMap.values()) {
 			vecList.add(getClusterablePoint(vec));
 		}
 		List<CentroidCluster<ClusterableVec>> compVecList = clusterer.cluster(vecList);

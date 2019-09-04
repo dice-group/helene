@@ -8,29 +8,28 @@ import org.aksw.word2vecrestful.utils.Word2VecMath;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-
 /**
- * Class to encapsulate word2vec in-memory model and expose methods to perform
+ * Class to encapsulate Word-Embeddings in-memory model and expose methods to perform
  * search on the model. (Only works with Normalized Model)
  * 
- * This class selects {@link W2VNrmlMemModelUnitVecExtItr#compareVecCount} vectors
+ * This class selects {@link NrmlMemModelUnitVec#compareVecCount} vectors
  * (centroids of the KMeans result on the model vectors) and then calculates the
  * cosine similarity of all words in model to those vectors.
  * 
  * It uses the knowledge about pre-processed similarities with
- * {@link W2VNrmlMemModelUnitVecExtItr#comparisonVecs} to narrow down the search of
+ * {@link NrmlMemModelUnitVec#comparisonVecs} to narrow down the search of
  * closest word for the user specified vector.
  * 
  * @author Nikit
  *
  */
-public class W2VNrmlMemModelUnitVecExtItr extends W2VNrmlMemModelBinSrch {
-	public static Logger LOG = LogManager.getLogger(GenWord2VecModel.class);
+public class NrmlMemModelUnitVec extends NrmlMemModelBinSrch {
+	public static Logger LOG = LogManager.getLogger(GenVecIndxModel.class);
 	
 	protected double bucketSize;
 	protected String currentImpl;
-	public W2VNrmlMemModelUnitVecExtItr(final Map<String, float[]> word2vec, final int vectorSize, int bucketCount) throws IOException {
-		super(word2vec, vectorSize, vectorSize, bucketCount);
+	public NrmlMemModelUnitVec(final Map<String, float[]> embdngMap, final int vectorSize, int bucketCount) throws IOException {
+		super(embdngMap, vectorSize, vectorSize, bucketCount);
 		bucketSize = (2d)/(Double.valueOf(bucketCount));
 		currentImpl = "Unit Vector";
 	}
@@ -59,7 +58,7 @@ public class W2VNrmlMemModelUnitVecExtItr extends W2VNrmlMemModelBinSrch {
 	 * @param subKey - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	protected String getClosestEntry(float[] vector, String subKey) {
+	public String getClosestEntry(float[] vector) {
 		String closestWord = null;
 		try {
 			// Normalize incoming vector
@@ -69,20 +68,19 @@ public class W2VNrmlMemModelUnitVecExtItr extends W2VNrmlMemModelBinSrch {
 			int ringRad = -1;
 			BitSet midBs;
 			//New Addition
-			boolean extraItr = true;
 			while (wordNotFound) {
 				midEmpty = false;
 				ringRad++;
 				LOG.info("Ring Radius: " + ringRad);
 				// calculate cosine similarity of all distances
 				float[] curCompVec;
-				midBs = new BitSet(word2vec.size());
+				midBs = new BitSet(embdngMap.size());
 				BitSet finBitSet = null;
 				for (int i = 0; i < compareVecCount; i++) {
 					curCompVec = comparisonVecs[i];
 					double cosSimVal = Word2VecMath.cosineSimilarityNormalizedVecs(curCompVec, vector);
 					int indx = getBucketIndex(cosSimVal);
-					BitSet curBs = new BitSet(word2vec.size());
+					BitSet curBs = new BitSet(embdngMap.size());
 					// calculate middle bitset
 					if(csBucketContainer[i][indx]!=null) {
 						curBs.or(csBucketContainer[i][indx]);
@@ -105,10 +103,7 @@ public class W2VNrmlMemModelUnitVecExtItr extends W2VNrmlMemModelBinSrch {
 						finBitSet.and(curBs);
 					}
 				}
-				if(!midEmpty && extraItr) {
-					extraItr = false;
-				}
-				else if (!midEmpty) {
+				if (!midEmpty) {
 					int nearbyWordsCount = finBitSet.cardinality();
 					LOG.info("Number of nearby words: " + nearbyWordsCount);
 					int[] nearbyIndexes = new int[nearbyWordsCount];
