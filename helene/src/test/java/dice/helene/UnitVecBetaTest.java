@@ -22,37 +22,45 @@ public class UnitVecBetaTest {
 
 	public static final String CORRECT_WORD = "correct";
 	public static final String WRONG_WORD = "wrong";
+	
+	public static final float MAX_BETA = 0.4036378111f;
 
 	static {
 		PropertyConfigurator.configure(Cfg.LOG_FILE);
 	}
 	public static Logger LOG = LogManager.getLogger(UnitVecBetaTest.class);
-
+	
 	@Test
-	public void testNbmTime() throws IOException {
-		LOG.info("Starting InMemory Theta Model test!");
-		Word2VecModel nbm = getNrmlzdTestModel();
+	public void testBetaModel() throws IOException {
+		for(float i=0;i<=MAX_BETA;i+=0.01) {
+			String closestWord = runSingleTest(i);
+			assertEquals(closestWord, CORRECT_WORD);
+		}
+		for(float i=(MAX_BETA+.001f);i<=5;i+=0.01) {
+			String closestWord = runSingleTest(i);
+			assertEquals(closestWord, WRONG_WORD);
+		}
+	}
+
+	
+	public String runSingleTest(float betaValue) throws IOException {
+		Word2VecModel nbm = getNrmlzdTestModel(betaValue);
 		float queryVec[] = new float[100];
 		for (int i = 0; i < 100; i++) {
 			queryVec[i] = 1;
 		}
-		LOG.info("Initializing brute force model");
 		GenVecIndxModel bruteForceModel = new NrmlMemModelBruteForce(nbm.word2vec, nbm.vectorSize);
 		bruteForceModel.process();
-		LOG.info("Initialization complete");
 		String correctWord = bruteForceModel.getClosestEntry(queryVec);
-		LOG.info("Closest Word from found through brute force: "+correctWord);
-		int bucketSize = 100000;
-		LOG.info("Initializing W2VNrmlMemModelUnitVecBeta Model");
+		int bucketSize = 10000;
 		GenVecIndxModel memModel = new NrmlMemModelUnitVecBeta(nbm.word2vec, nbm.vectorSize, bucketSize);
 		memModel.process();
-		LOG.info("Initialization complete");
 		String closestWord = memModel.getClosestEntry(queryVec);
-		LOG.info("Closest Word from found through Beta model: "+closestWord);
 		assertEquals(correctWord, memModel.getClosestEntry(queryVec));
+		return closestWord;
 	}
 
-	public static Word2VecModel getNrmlzdTestModel() {
+	public static Word2VecModel getNrmlzdTestModel(float betaValue) {
 		int vectorSize = 100;
 		Map<String, float[]> wordMap = new HashMap<>();
 		float[] correctVec = new float[vectorSize];
@@ -65,8 +73,7 @@ public class UnitVecBetaTest {
 				wrongVec[i] = 1.04f;
 			}
 		}
-		// correctVec[0] = 1.4036378111f;
-		correctVec[0] = 1.4f;
+		correctVec[0] = 1f + betaValue;
 		wordMap.put(CORRECT_WORD, Word2VecMath.normalize(correctVec));
 		wordMap.put(WRONG_WORD, Word2VecMath.normalize(wrongVec));
 		return new Word2VecModel(wordMap, vectorSize);
