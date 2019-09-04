@@ -41,40 +41,11 @@ public class NrmlMemModelBruteForce implements GenVecIndxModel {
 	 * 
 	 * @param vector
 	 *            - vector to find closest word to
-	 * 
+	 * @param subKey
+	 *            - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	@Override
 	public String getClosestEntry(float[] vector) {
-		return getClosestEntry(vector, null);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector
-	 *            - vector to find closest word to
-	 * @param subKey
-	 *            - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	@Override
-	public String getClosestSubEntry(float[] vector, String subKey) {
-		return getClosestEntry(vector, subKey);
-	}
-
-	/**
-	 * Method to fetch the closest word entry for a given vector using cosine
-	 * similarity
-	 * 
-	 * @param vector
-	 *            - vector to find closest word to
-	 * @param subKey
-	 *            - key to subset if any
-	 * @return closest word to the given vector alongwith it's vector
-	 */
-	private String getClosestEntry(float[] vector, String subKey) {
 		// Normalize incoming vector
 		vector = Word2VecMath.normalize(vector);
 		return Word2VecMath.findClosestNormalizedVec(embdngMap, vector);

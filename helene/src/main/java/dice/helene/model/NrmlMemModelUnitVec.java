@@ -58,7 +58,7 @@ public class NrmlMemModelUnitVec extends NrmlMemModelBinSrch {
 	 * @param subKey - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	protected String getClosestEntry(float[] vector, String subKey) {
+	public String getClosestEntry(float[] vector) {
 		String closestWord = null;
 		try {
 			// Normalize incoming vector

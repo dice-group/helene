@@ -49,14 +49,6 @@ public class NrmlMemModelUnitVecBeta extends NrmlMemModelUnitVec {
 		double c = (lSq-1d)*alpha*alpha;
 		
 		double[] betaArr = MathUtil.quadraticEquationRoots(a, b, c);
-		//TODO: Choosing beta can be improved
-		/*double beta = betaArr[0];
-		double delta1 = calcDelta(beta, minVal);
-		beta = betaArr[1];
-		double delta2 = calcDelta(beta, minVal);
-		
-		double delta = Math.abs(delta1>delta2?betaArr[0]:betaArr[1]);*/
-		
 
 		gamma = (int) Math.ceil(Math.max(Math.abs(betaArr[0]), Math.abs(betaArr[1]))/bucketSize);
 		return gamma<1?1:gamma;
@@ -73,7 +65,7 @@ public class NrmlMemModelUnitVecBeta extends NrmlMemModelUnitVec {
 	 * @param subKey - key to subset if any
 	 * @return closest word to the given vector alongwith it's vector
 	 */
-	protected String getClosestEntry(float[] vector, String subKey) {
+	public String getClosestEntry(float[] vector) {
 		String closestWord = null;
 		try {
 			// Normalize incoming vector
